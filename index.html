@@ -3,84 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Información del Dispositivo</title>
+    <title>Mapa de República Dominicana</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+        #map {
+            height: 80vh;
+            width: 100%;
         }
-        .container {
-            max-width: 600px;
-            margin: auto;
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+        #controls {
+            margin: 10px;
+            text-align: center;
         }
-        .info {
-            margin-bottom: 20px;
+        #createCode, #addCode {
+            padding: 10px;
+            font-size: 16px;
         }
-        .info label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
+        .device-marker {
+            border: 2px solid #333;
+            border-radius: 50%;
+            background-color: #00f;
+            width: 20px;
+            height: 20px;
+            display: inline-block;
         }
-        .info p {
-            margin: 5px 0;
-        }
-        .photo-upload {
-            margin-top: 20px;
-        }
-        .photo-upload input[type="file"] {
-            display: block;
-            margin-bottom: 10px;
-        }
-        .photo-upload img {
-            max-width: 100%;
-            margin-top: 10px;
+        .current-location-marker {
+            background-color: #f00;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Información del Dispositivo</h1>
-        <div class="info">
-            <label for="device-info">Información del Dispositivo:</label>
-            <p id="device-info">Esperando...</p>
-        </div>
-        <div class="photo-upload">
-            <label for="file-upload">Sube una foto (opcional):</label>
-            <input type="file" id="file-upload" accept="image/*">
-            <img id="preview" src="" alt="Vista previa" style="display: none;">
-        </div>
+    <div id="controls">
+        <button id="createCode">Crear Código</button>
+        <input type="text" id="codeInput" placeholder="Agregar Código" />
+        <button id="addCode">Agregar Código</button>
     </div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        // Mostrar información del dispositivo
-        document.addEventListener('DOMContentLoaded', () => {
-            const deviceInfo = document.getElementById('device-info');
-            const userAgent = navigator.userAgent;
-            const platform = navigator.platform;
-            const deviceDetails = `User Agent: ${userAgent}<br>Platform: ${platform}`;
-            deviceInfo.innerHTML = deviceDetails;
-        });
+        let myCode = null;
+        let map = L.map('map').setView([18.7357, -70.1627], 8);
+        let deviceMarkers = {};
+        let currentLocationMarker = null;
 
-        // Manejar carga de archivo de imagen
-        const fileInput = document.getElementById('file-upload');
-        const preview = document.getElementById('preview');
+        // Mapa Satelital de Mapbox
+        L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=YOUR_MAPBOX_ACCESS_TOKEN', {
+            maxZoom: 19,
+            tileSize: 512,
+            zoomOffset: -1,
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="https://www.mapbox.com/">Mapbox</a>',
+            id: 'mapbox/satellite-v9',
+            accessToken: 'YOUR_MAPBOX_ACCESS_TOKEN'
+        }).addTo(map);
 
-        fileInput.addEventListener('change', () => {
-            const file = fileInput.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
+        // Crear código único
+        document.getElementById('createCode').onclick = function() {
+            myCode = Math.random().toString(36).substring(2, 10);
+            alert('Tu código es: ' + myCode);
+            localStorage.setItem('deviceCode', myCode);
+        };
+
+        // Agregar código y mostrar ubicación
+        document.getElementById('addCode').onclick = function() {
+            const code = document.getElementById('codeInput').value;
+            if (code) {
+                trackDevice(code);
             } else {
-                preview.style.display = 'none';
-                preview.src = '';
+                alert('Introduce un código válido');
             }
-        });
+        };
+
+        // Función para rastrear un dispositivo basado en su código
+        function trackDevice(code) {
+            if (!deviceMarkers[code]) {
+                deviceMarkers[code] = L.marker([0, 0], {
+                    icon: L.divIcon({
+                        className: 'device-marker',
+                        html: '<div></div>',
+                        iconSize: [20, 20],
+                    })
+                }).addTo(map);
+            }
+
+            // Simulación de actualización de ubicación cada segundo
+            setInterval(() => {
+                const lat = 18.7357 + Math.random() / 100; // Simular movimiento
+                const lng = -70.1627 + Math.random() / 100; // Simular movimiento
+                deviceMarkers[code].setLatLng([lat, lng]);
+                map.setView([lat, lng]);
+            }, 1000);
+        }
+
+        // Rastrear el propio dispositivo
+        function onLocationFound(e) {
+            if (myCode) {
+                trackDevice(myCode);
+                if (currentLocationMarker) {
+                    currentLocationMarker.setLatLng(e.latlng);
+                } else {
+                    currentLocationMarker = L.marker(e.latlng, {
+                        icon: L.divIcon({
+                            className: 'device-marker current-location-marker',
+                            html: '<div></div>',
+                            iconSize: [20, 20],
+                        })
+                    }).addTo(map);
+                }
+                map.setView(e.latlng, 16);
+            }
+        }
+
+        map.on('locationfound', onLocationFound);
+        map.locate({setView: true, maxZoom: 16, watch: true});
+
+        // Ajustar el mapa para que muestre toda la República Dominicana
+        map.fitBounds([
+            [17.535, -72.0], // Suroeste del país
+            [19.93, -68.0]  // Noreste del país
+        ]);
     </script>
 </body>
 </html>
