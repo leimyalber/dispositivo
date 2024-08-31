@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Información del Dispositivo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .info {
+            margin-bottom: 20px;
+        }
+        .info label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .info p {
+            margin: 5px 0;
+        }
+        .photo-upload {
+            margin-top: 20px;
+        }
+        .photo-upload input[type="file"] {
+            display: block;
+            margin-bottom: 10px;
+        }
+        .photo-upload img {
+            max-width: 100%;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Información del Dispositivo</h1>
+        <div class="info">
+            <label for="device-info">Información del Dispositivo:</label>
+            <p id="device-info">Esperando...</p>
+        </div>
+        <div class="photo-upload">
+            <label for="file-upload">Sube una foto (opcional):</label>
+            <input type="file" id="file-upload" accept="image/*">
+            <img id="preview" src="" alt="Vista previa" style="display: none;">
+        </div>
+    </div>
+    <script>
+        // Mostrar información del dispositivo
+        document.addEventListener('DOMContentLoaded', () => {
+            const deviceInfo = document.getElementById('device-info');
+            const userAgent = navigator.userAgent;
+            const platform = navigator.platform;
+            const deviceDetails = `User Agent: ${userAgent}<br>Platform: ${platform}`;
+            deviceInfo.innerHTML = deviceDetails;
+        });
+
+        // Manejar carga de archivo de imagen
+        const fileInput = document.getElementById('file-upload');
+        const preview = document.getElementById('preview');
+
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.style.display = 'none';
+                preview.src = '';
+            }
+        });
+    </script>
+</body>
+</html>
